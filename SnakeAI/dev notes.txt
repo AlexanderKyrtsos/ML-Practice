@@ -1,0 +1,8 @@
+To briefly describe the game, you control a snake in a 20x20 grid with the goal of growing as large as possible by eating. The snake dies when it touches a wall or itself. So, the only actions the snake can do are to continue, move left or move right.
+
+In initial development, I simply created the game as normal and wrote a script to play the game as a human would, but this of course would take days to train even a model as simple as the one here. So halfway through I did a complete rewrite to accommodate a headless mode that allowed thousands of iterations an hour.
+
+For training, I settled on a fairly simple reward structure, with eating food giving a large reward, moving towards food giving a tiny reward, and for punishments, moving away yields a small punishment and dying or starving gives a large punishment. 
+
+Another issue was I trained the snake feature vector to look ahead only 1 square for danger. This caused an issue in which the snake would commonly trap itself despite a massive amount of space available. To fix this, I redesigned the algorithm to take into account the distance to collision in each direction, the tail position and the nearest body segment.
+
