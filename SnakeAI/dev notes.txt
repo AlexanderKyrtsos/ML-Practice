@@ -1,8 +1,38 @@
-To briefly describe the game, you control a snake in a 20x20 grid with the goal of growing as large as possible by eating. The snake dies when it touches a wall or itself. So, the only actions the snake can do are to continue, move left or move right.
+To briefly describe the game, you control a snake with the goal of growing as large as possible by eating. 
+The snake dies when it touches a wall or itself and the only actions are to continue straight, go left or go right.
 
-In initial development, I simply created the game as normal and wrote a script to play the game as a human would, but this of course would take days to train even a model as simple as the one here. So halfway through I did a complete rewrite to accommodate a headless mode that allowed thousands of iterations an hour.
+In initial development, I  created the game as normal, meaning to play the game as a human would, 
+but this introduced a lot of other additional technical problems, for example, needing to evaluate the game via pixels.
+At least right now, I didn't want to do that, so I did a rewrite to better accommodate a headless or gui-less mode 
 
-For training, I settled on a fairly simple reward structure, with eating food giving a large reward, moving towards food giving a tiny reward, and for punishments, moving away yields a small punishment and dying or starving gives a large punishment. 
+For training, I settled on a fairly simple reward structure, with eating food giving a large reward, 
+moving towards food giving a tiny reward, and for punishments, moving away yields a small punishment 
+and dying or timing out gives a large punishment. 
 
-Another issue was I trained the snake feature vector to look ahead only 1 square for danger. This caused an issue in which the snake would commonly trap itself despite a massive amount of space available. To fix this, I redesigned the algorithm to take into account the distance to collision in each direction, the tail position and the nearest body segment.
+Another issue was I trained the snake feature vector to look ahead only 1 square for danger. 
+This caused an issue in which the snake would commonly trap itself despite a massive amount of space available. 
+To fix this, I redesigned the algorithm to take into account the distance to collision in each direction and the tail position.
+
+-----------------------------------------------------------------------------------------------------------------------------
+In short, the model works as follows: 
+First, it looks at the state of the game, checks which directions have danger and
+how long it can travel in each before hitting an obstacle, where the food is and where its body is.
+
+Next it makes a decision based on this information and outputs how good it thinks each move is and picks the highest scoring option.
+
+
+Then it plays hundreds of games, saving the state every iteration, and from this, in similar states in the future, 
+picks the next step which resulted in the best outcome longterm. 
+
+During its initial training, the model picks lots of purely random moves just to experiment, gradually preferring to choose known good moves.
+
+The underlying algorithm I picked is DQN -- Deep Q Network. 
+Something interesting I learned doing this project is that we actually need two networks for the model to be trained correctly.
+This is because Q-learning updates predictions using targets calculated from the same network being trained.
+Meaning every update would shift both the prediction and the target simultaneously. 
+So the second network is the main network but simply locked every 100 steps, as otherwise, 
+it would erratically flip between strategies without being able to concretely determine one is better than another 
+-----------------------------------------------------------------------------------------------------------------------------
+
+To watch ai play: python play.py ai models/snake_dqn.pth --fps 30
 

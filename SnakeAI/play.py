@@ -85,13 +85,7 @@ def play_ai(
     high_score = 0
     running = True
 
-    print(f"\nSnake Game - AI Player")
     print(f"Model: {model_path}")
-    print("=" * 30)
-    print("Controls:")
-    print("  R: Restart")
-    print("  Q or Escape: Quit")
-    print("  +/-: Adjust speed")
     print("=" * 30)
 
     state = env.reset()

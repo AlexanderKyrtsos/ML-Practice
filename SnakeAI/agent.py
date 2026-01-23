@@ -135,7 +135,7 @@ class DQNAgent:
         else:
             self.device = torch.device(device)
 
-        print(f"Using device: {self.device}")
+        print(f"Using: {self.device}")
 
         # Networks
         self.policy_net = DQN(state_size, hidden_size, action_size).to(self.device)
@@ -251,7 +251,6 @@ class DQNAgent:
         print(f"Agent saved to {path}")
 
     def load(self, path: str) -> None:
-        """Load the agent from a file."""
         checkpoint = torch.load(path, map_location=self.device)
         self.policy_net.load_state_dict(checkpoint["policy_net"])
         self.target_net.load_state_dict(checkpoint["target_net"])
@@ -259,11 +258,9 @@ class DQNAgent:
         self.epsilon = checkpoint["epsilon"]
         self.steps_done = checkpoint["steps_done"]
         self.episodes_done = checkpoint["episodes_done"]
-        print(f"Agent loaded from {path}")
 
     @classmethod
     def from_file(cls, path: str, device: Optional[str] = None) -> "DQNAgent":
-        """Load an agent from a file."""
         checkpoint = torch.load(path, map_location=device or "cpu")
         agent = cls(
             state_size=checkpoint["state_size"],
