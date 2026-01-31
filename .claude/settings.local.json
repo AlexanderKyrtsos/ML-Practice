@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(dir \"C:\\\\Users\\\\r8\\\\Documents\\\\Projects\\\\ML Practice\")"
+      "Bash(dir \"C:\\\\Users\\\\r8\\\\Documents\\\\Projects\\\\ML Practice\")",
+      "Bash(pip install:*)",
+      "Bash(python:*)"
     ]
   }
 }
