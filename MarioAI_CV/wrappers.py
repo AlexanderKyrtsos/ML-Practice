@@ -99,13 +99,18 @@ class FrameStack(gym.Wrapper):
         return stacked, reward, terminated, truncated, info
 
 
-def make_mario_env(render_mode=None):
-    """Create a fully wrapped Mario environment for RL training."""
+def make_mario_env(render_mode=None, training_mode=False, max_episode_steps=3000):
+    """Create a fully wrapped Mario environment for RL training.
+
+    FrameStack is not applied here; use VecFrameStack in the training script.
+    NormalizeObservation is not applied; SB3 CnnPolicy handles normalization.
+    """
     from mario_env import MarioEnv
-    env = MarioEnv(render_mode=render_mode)
+    env = MarioEnv(render_mode=render_mode, training_mode=training_mode)
     env = FrameSkip(env, skip=4)
     env = GrayScaleObservation(env)
     env = ResizeObservation(env, size=84)
-    env = NormalizeObservation(env)
-    env = FrameStack(env, num_stack=4)
+    if max_episode_steps is not None:
+        from gymnasium.wrappers import TimeLimit
+        env = TimeLimit(env, max_episode_steps=max_episode_steps)
     return env

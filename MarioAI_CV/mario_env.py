@@ -21,10 +21,13 @@ class MarioEnv(gym.Env):
 
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 60}
 
-    def __init__(self, render_mode=None):
+    def __init__(self, render_mode=None, training_mode=False):
         super().__init__()
         self.render_mode = render_mode
-        self.game = MarioGame(render_mode=(render_mode == "human"))
+        self.game = MarioGame(
+            render_mode=(render_mode == "human"),
+            training_mode=training_mode,
+        )
 
         self.action_space = spaces.Discrete(7)
         self.observation_space = spaces.Box(
@@ -38,8 +41,12 @@ class MarioEnv(gym.Env):
 
     def step(self, action):
         obs, reward, done, info = self.game.step(int(action))
-        terminated = done
-        truncated = False
+        if info.get("timed_out", False):
+            terminated = False
+            truncated = True
+        else:
+            terminated = done
+            truncated = False
         return obs, reward, terminated, truncated, info
 
     def render(self):

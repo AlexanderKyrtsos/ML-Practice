@@ -81,9 +81,10 @@ class Enemy:
 
 
 class MarioGame:
-    def __init__(self, render_mode=False, level_path=None):
+    def __init__(self, render_mode=False, level_path=None, training_mode=False):
         self.render_mode = render_mode
         self.level_path = level_path
+        self.training_mode = training_mode
         self.screen = None
         self.logical_surface = pygame.Surface((LOGICAL_W, LOGICAL_H))
         self.clock = pygame.time.Clock()
@@ -131,8 +132,9 @@ class MarioGame:
         self.camera_x = 0
         self.score = 0
         self.coins = 0
-        self.time = 400
+        self.time = 1500 if self.training_mode else 400
         self.frame_count = 0
+        self.timed_out = False
 
         self._spawn_enemies()
         self._prev_x = self.mario_x
@@ -182,6 +184,7 @@ class MarioGame:
         if self.frame_count % 24 == 0:
             self.time = max(0, self.time - 1)
             if self.time <= 0:
+                self.timed_out = True
                 self._kill_mario()
 
         # Parse action
@@ -299,15 +302,15 @@ class MarioGame:
         max_cam = self.level_w * TILE - LOGICAL_W
         self.camera_x = max(0, min(self.camera_x, max_cam))
 
-        # Reward
+        # Reward (kept small to avoid gradient explosions)
         reward = 0.0
         dx = self.mario_x - self._prev_x
-        reward += dx  # +1 per pixel right
-        reward -= 0.1  # time pressure
+        reward += dx * 0.1  # ~0.1-0.3 per step when moving right
+        reward -= 0.01  # small time pressure
         if self.dead:
-            reward = -15.0
+            reward = -1.0
         if self.won:
-            reward += 100.0
+            reward += 10.0
 
         done = self.dead or self.won
         return self._get_obs(), reward, done, self._get_info()
@@ -379,10 +382,11 @@ class MarioGame:
 
     def _get_obs(self):
         self._render_frame()
+        if not hasattr(self, '_obs_buffer'):
+            self._obs_buffer = np.empty((LOGICAL_H, LOGICAL_W, 3), dtype=np.uint8)
         pixels = pygame.surfarray.array3d(self.logical_surface)
-        # pygame gives (W, H, 3), transpose to (H, W, 3)
-        pixels = np.transpose(pixels, (1, 0, 2))
-        return pixels.astype(np.uint8)
+        self._obs_buffer[:] = pixels.transpose(1, 0, 2)
+        return self._obs_buffer
 
     def _get_info(self):
         return {
@@ -392,6 +396,7 @@ class MarioGame:
             "x_pos": self.mario_x,
             "dead": self.dead,
             "won": self.won,
+            "timed_out": self.timed_out,
         }
 
     def _render_frame(self):
@@ -450,14 +455,15 @@ class MarioGame:
             # Head
             pygame.draw.rect(surf, MARIO_SKIN, (mx + 2, my, 10, 6))
 
-        # HUD
-        hud_y = 2
-        score_txt = self.font.render(f"SCORE {self.score:06d}", True, WHITE)
-        coin_txt = self.font.render(f"COINS {self.coins:02d}", True, WHITE)
-        time_txt = self.font.render(f"TIME {self.time:03d}", True, WHITE)
-        surf.blit(score_txt, (8, hud_y))
-        surf.blit(coin_txt, (100, hud_y))
-        surf.blit(time_txt, (200, hud_y))
+        # HUD (skip in training mode to avoid text in observations)
+        if not self.training_mode:
+            hud_y = 2
+            score_txt = self.font.render(f"SCORE {self.score:06d}", True, WHITE)
+            coin_txt = self.font.render(f"COINS {self.coins:02d}", True, WHITE)
+            time_txt = self.font.render(f"TIME {self.time:03d}", True, WHITE)
+            surf.blit(score_txt, (8, hud_y))
+            surf.blit(coin_txt, (100, hud_y))
+            surf.blit(time_txt, (200, hud_y))
 
     def render(self):
         if self.screen is None:
